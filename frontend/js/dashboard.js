@@ -5,18 +5,26 @@
 document.addEventListener('DOMContentLoaded', () => {
   damMountLayout('dashboard', 'Dashboard');
 
+  // Update welcome message
+  const welcome = document.getElementById('welcomeMessage');
+  if (welcome && DAM_DATA.currentUser) {
+    const firstName = DAM_DATA.currentUser.name.split(' ')[0];
+    welcome.textContent = `Welcome back, ${firstName} 👋`;
+  }
+
   renderRecentUploads();
   renderRecentActivity();
   drawDashboardCharts();
 
   document.addEventListener('dam:redraw-charts', drawDashboardCharts);
   document.querySelector('.theme-switch')?.addEventListener('click', () => setTimeout(drawDashboardCharts, 60));
+  loadDashboardStats();
 });
 
-function renderRecentUploads(){
+function renderRecentUploads() {
   const tbody = document.getElementById('recentUploadsBody');
-  if(!tbody) return;
-  const rows = DAM_DATA.assets.slice(0,6).map(a => `
+  if (!tbody) return;
+  const rows = DAM_DATA.assets.slice(0, 6).map(a => `
     <tr>
       <td>
         <div class="d-flex align-items-center gap-2">
@@ -30,17 +38,17 @@ function renderRecentUploads(){
       <td><span class="chip chip-neutral">${a.category}</span></td>
       <td>${a.by}</td>
       <td class="text-muted-2">${a.date}</td>
-      <td><span class="chip ${a.visibility==='Public' ? 'chip-success' : 'chip-warning'}">${a.visibility}</span></td>
+      <td><span class="chip ${a.visibility === 'Public' ? 'chip-success' : 'chip-warning'}">${a.visibility}</span></td>
     </tr>
   `).join('');
   tbody.innerHTML = rows;
 }
 
-function renderRecentActivity(){
+function renderRecentActivity() {
   const list = document.getElementById('recentActivityList');
-  if(!list) return;
-  const colorMap = {blue:'bg-tint-blue', green:'bg-tint-green', purple:'bg-tint-purple', amber:'bg-tint-amber', cyan:'bg-tint-cyan', red:'bg-tint-red'};
-  list.innerHTML = DAM_DATA.activity.slice(0,5).map(item => `
+  if (!list) return;
+  const colorMap = { blue: 'bg-tint-blue', green: 'bg-tint-green', purple: 'bg-tint-purple', amber: 'bg-tint-amber', cyan: 'bg-tint-cyan', red: 'bg-tint-red' };
+  list.innerHTML = DAM_DATA.activity.slice(0, 5).map(item => `
     <div class="d-flex align-items-start gap-3 mb-3">
       <div class="stat-icon ${colorMap[item.color]} mb-0" style="width:36px;height:36px;font-size:.95rem;"><i class="bi ${item.icon}"></i></div>
       <div>
@@ -51,14 +59,58 @@ function renderRecentActivity(){
   `).join('');
 }
 
-function drawDashboardCharts(){
+function drawDashboardCharts() {
   damDrawBarChart('monthlyUploadsChart', DAM_DATA.monthlyUploads);
   damDrawDonutChart('categoryDonutChart', DAM_DATA.categoryDistribution);
 
   const legend = document.getElementById('categoryLegend');
-  if(legend){
+  if (legend) {
     legend.innerHTML = DAM_DATA.categoryDistribution.map(c => `
       <div class="legend-item"><span class="legend-dot" style="background:${c.color};"></span>${c.label} (${c.value})</div>
     `).join('');
   }
+}
+
+async function loadDashboardStats() {
+
+  console.log("Loading dashboard stats...");
+
+  try {
+
+    const response = await fetch("http://localhost:5000/api/assets/stats");
+
+    console.log("Response:", response);
+
+    const result = await response.json();
+
+    console.log("Result:", result);
+
+    if (!result.success) return;
+
+    document.getElementById("totalFiles").textContent =
+      result.data.totalFiles;
+
+    document.getElementById("images").textContent =
+      result.data.images;
+
+    document.getElementById("videos").textContent =
+      result.data.videos;
+
+    document.getElementById("documents").textContent =
+      result.data.documents;
+
+    const bytes = Number(result.data.totalStorage);
+
+    const mb = (bytes / (1024 * 1024)).toFixed(2);
+
+    document.getElementById("storageUsed").textContent =
+      mb + " MB";
+
+  }
+  catch (error) {
+
+    console.log("ERROR:", error);
+
+  }
+
 }

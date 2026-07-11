@@ -5,6 +5,25 @@
 document.addEventListener('DOMContentLoaded', () => {
   damMountLayout('profile', 'My Profile');
 
+  // Populate profile fields
+  const user = DAM_DATA.currentUser;
+  if(user){
+    document.getElementById('profileHeaderName').textContent = user.name;
+    document.getElementById('profileHeaderAvatar').src = user.avatar;
+    document.getElementById('profileHeaderRole').textContent = `${user.role} · ${user.department || ''}`;
+    
+    document.getElementById('profileName').value = user.name;
+    document.getElementById('profileEmail').value = user.email;
+    
+    // update role select
+    const roleSelect = document.getElementById('profileRole');
+    if(roleSelect){
+      for(let opt of roleSelect.options){
+        if(opt.text === user.role) opt.selected = true;
+      }
+    }
+  }
+
   document.getElementById('profileForm').addEventListener('submit', (e) => {
     e.preventDefault();
     damToast('Profile information updated successfully.', 'success');

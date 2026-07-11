@@ -5,13 +5,17 @@
 
 const DAM_DATA = {
 
-  currentUser:{
-    name:"Aditi Rao",
-    email:"aditi.rao@brightwave-marketing.com",
-    role:"Marketing Manager",
-    department:"Brand & Content",
-    avatar:"https://i.pravatar.cc/150?img=47"
-  },
+  currentUser: (function(){
+    const saved = localStorage.getItem('dam_user');
+    if(saved) return JSON.parse(saved);
+    return {
+      name:"Aditi Rao",
+      email:"aditi.rao@brightwave-marketing.com",
+      role:"Marketing Manager",
+      department:"Brand & Content",
+      avatar:"https://i.pravatar.cc/150?img=47"
+    };
+  })(),
 
   assets:[
     {id:1, name:"Summer Campaign Banner", type:"image", ext:"JPG", category:"Campaigns", tags:["summer","banner","social"], date:"2026-06-28", by:"Aditi Rao", size:"2.4 MB", visibility:"Public", downloads:214, color:"#2563EB", icon:"bi-image"},

@@ -13,38 +13,38 @@ document.addEventListener('DOMContentLoaded', () => {
   let queuedFiles = [];
 
   browseBtn.addEventListener('click', () => fileInput.click());
-  dropzone.addEventListener('click', (e) => { if(e.target === dropzone) fileInput.click(); });
-  dropzone.addEventListener('keydown', (e) => { if(e.key === 'Enter' || e.key === ' ') fileInput.click(); });
+  dropzone.addEventListener('click', (e) => { if (e.target === dropzone) fileInput.click(); });
+  dropzone.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
 
-  ['dragenter','dragover'].forEach(evt => dropzone.addEventListener(evt, (e) => {
+  ['dragenter', 'dragover'].forEach(evt => dropzone.addEventListener(evt, (e) => {
     e.preventDefault(); e.stopPropagation(); dropzone.classList.add('dragover');
   }));
-  ['dragleave','drop'].forEach(evt => dropzone.addEventListener(evt, (e) => {
+  ['dragleave', 'drop'].forEach(evt => dropzone.addEventListener(evt, (e) => {
     e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('dragover');
   }));
   dropzone.addEventListener('drop', (e) => handleFiles(e.dataTransfer.files));
   fileInput.addEventListener('change', () => handleFiles(fileInput.files));
 
-  function fileTypeIcon(file){
-    if(file.type.startsWith('image/')) return {icon:'bi-image', color:'#2563EB'};
-    if(file.type.startsWith('video/')) return {icon:'bi-camera-reels', color:'#8B5CF6'};
-    if(file.type === 'application/pdf') return {icon:'bi-file-earmark-pdf', color:'#EF4444'};
-    if(file.type.startsWith('audio/')) return {icon:'bi-file-earmark-music', color:'#16A34A'};
-    return {icon:'bi-file-earmark-text', color:'#64748B'};
+  function fileTypeIcon(file) {
+    if (file.type.startsWith('image/')) return { icon: 'bi-image', color: '#2563EB' };
+    if (file.type.startsWith('video/')) return { icon: 'bi-camera-reels', color: '#8B5CF6' };
+    if (file.type === 'application/pdf') return { icon: 'bi-file-earmark-pdf', color: '#EF4444' };
+    if (file.type.startsWith('audio/')) return { icon: 'bi-file-earmark-music', color: '#16A34A' };
+    return { icon: 'bi-file-earmark-text', color: '#64748B' };
   }
 
-  function handleFiles(fileList){
+  function handleFiles(fileList) {
     Array.from(fileList).forEach(file => {
       queuedFiles.push(file);
       renderQueueItem(file);
     });
-    if(fileList.length) damToast(`${fileList.length} file(s) added to the upload queue.`, 'info');
+    if (fileList.length) damToast(`${fileList.length} file(s) added to the upload queue.`, 'info');
   }
 
-  function renderQueueItem(file){
+  function renderQueueItem(file) {
     const meta = fileTypeIcon(file);
-    const sizeKb = (file.size/1024/1024).toFixed(2);
-    const id = 'qf-' + Math.random().toString(36).slice(2,9);
+    const sizeKb = (file.size / 1024 / 1024).toFixed(2);
+    const id = 'qf-' + Math.random().toString(36).slice(2, 9);
     const isImage = file.type.startsWith('image/');
 
     const item = document.createElement('div');
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     fileQueue.appendChild(item);
 
-    if(isImage){
+    if (isImage) {
       const reader = new FileReader();
       reader.onload = e => {
         const thumb = item.querySelector('.file-icon-thumb');
@@ -77,10 +77,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // simulate per-file upload progress
     let pct = 0;
-    const bar = document.getElementById(id+'-bar');
+    const bar = document.getElementById(id + '-bar');
     const interval = setInterval(() => {
-      pct += Math.random()*20 + 8;
-      if(pct >= 100){ pct = 100; clearInterval(interval); }
+      pct += Math.random() * 20 + 8;
+      if (pct >= 100) { pct = 100; clearInterval(interval); }
       bar.style.width = pct + '%';
     }, 220);
   }
@@ -91,19 +91,19 @@ document.addEventListener('DOMContentLoaded', () => {
       queuedFiles = [];
       document.getElementById('uploadForm').reset();
       damToast('Upload cancelled.', 'warning');
-    }, {title:'Cancel upload?'});
+    }, { title: 'Cancel upload?' });
   });
 
-  document.getElementById('uploadForm').addEventListener('submit', (e) => {
+  document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('assetName').value.trim();
     const category = document.getElementById('assetCategory').value;
 
-    if(!name || !category){
+    if (!name || !category) {
       damToast('Please fill in the asset name and category.', 'danger', 'Missing information');
       return;
     }
-    if(queuedFiles.length === 0){
+    if (queuedFiles.length === 0) {
       damToast('Please add at least one file before submitting.', 'warning', 'No files selected');
       return;
     }
@@ -115,24 +115,65 @@ document.addEventListener('DOMContentLoaded', () => {
     wrap.classList.remove('d-none');
     submitBtn.disabled = true;
 
-    let pct = 0;
-    const interval = setInterval(() => {
-      pct += Math.random()*15 + 5;
-      if(pct >= 100){
-        pct = 100;
-        clearInterval(interval);
-        setTimeout(() => {
-          damToast(`"${name}" was uploaded successfully.`, 'success', 'Upload complete');
-          document.getElementById('uploadForm').reset();
-          document.getElementById('fileQueue').innerHTML = '';
-          queuedFiles = [];
-          wrap.classList.add('d-none');
-          bar.style.width = '0%';
-          submitBtn.disabled = false;
-        }, 400);
+    const formData = new FormData();
+
+    formData.append("file", queuedFiles[0]);
+
+    formData.append("assetName", name);
+
+    formData.append("categoryId", category);
+
+    try {
+
+      const response = await fetch(
+        "http://localhost:5000/api/assets/upload",
+        {
+          method: "POST",
+          body: formData
+        }
+      );
+
+      const result = await response.json();
+
+      if (!result.success) {
+
+        damToast("Upload failed", "danger");
+
+        submitBtn.disabled = false;
+
+        return;
       }
-      bar.style.width = pct + '%';
-      pctLabel.textContent = Math.floor(pct) + '%';
-    }, 200);
+
+      bar.style.width = "100%";
+      pctLabel.textContent = "100%";
+
+      damToast("File uploaded successfully!", "success");
+
+      document.getElementById("uploadForm").reset();
+
+      fileQueue.innerHTML = "";
+
+      queuedFiles = [];
+
+      setTimeout(() => {
+
+        wrap.classList.add("d-none");
+
+        bar.style.width = "0%";
+
+        submitBtn.disabled = false;
+
+      }, 500);
+
+    }
+    catch (error) {
+
+      console.error(error);
+
+      damToast("Upload failed", "danger");
+
+      submitBtn.disabled = false;
+
+    }
   });
 });

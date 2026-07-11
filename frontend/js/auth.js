@@ -55,6 +55,16 @@ document.addEventListener('DOMContentLoaded', () => {
       submitBtn.disabled = true;
 
       setTimeout(() => {
+        // Find user by email or create a dummy one for the demo
+        const user = DAM_DATA.users.find(u => u.email === emailInput.value.trim()) || {
+          name: emailInput.value.split('@')[0],
+          email: emailInput.value.trim(),
+          role: 'Admin',
+          department: 'Marketing',
+          avatar: 'https://i.pravatar.cc/150'
+        };
+        localStorage.setItem('dam_user', JSON.stringify(user));
+        
         successAlert.classList.remove('d-none');
         setTimeout(() => { window.location.href = 'dashboard.html'; }, 900);
       }, 1100);
