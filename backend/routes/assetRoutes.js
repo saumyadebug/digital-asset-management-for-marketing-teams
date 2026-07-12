@@ -3,6 +3,7 @@ const express = require("express");
 const router = express.Router();
 
 const upload = require("../middleware/uploadMiddleware");
+const { protect } = require("../middleware/authMiddleware");
 const {
   uploadAsset,
   getAllAssets,
@@ -12,19 +13,36 @@ const {
 } = require("../controllers/assetController");
 
 // Upload File
+
 router.post(
   "/upload",
+  protect,
   upload.single("file"),
   uploadAsset
 );
 
-// Get All Assets
-router.post("/upload", upload.single("file"), uploadAsset);
+router.get(
+  "/",
+  protect,
+  getAllAssets
+);
 
-router.get("/", getAllAssets);
+router.delete(
+  "/:id",
+  protect,
+  deleteAsset
+);
 
-router.delete("/:id", deleteAsset);
-router.get("/download/:id", downloadAsset);
-router.get("/stats", getStats);
+router.get(
+  "/download/:id",
+  protect,
+  downloadAsset
+);
+
+router.get(
+  "/stats",
+  protect,
+  getStats
+);
 
 module.exports = router;

@@ -26,26 +26,30 @@ const uploadAsset = async (req, res) => {
     const result = await uploadToBlob(req.file);
 
     // Save metadata in Azure SQL
-    await sql.query`
-      INSERT INTO Assets
-      (
-        FileName,
-        OriginalFileName,
-        BlobURL,
-        FileType,
-        FileSize,
-        CategoryID
-      )
-      VALUES
-      (
-        ${result.fileName},
-        ${req.file.originalname},
-        ${result.url},
-        ${req.file.mimetype},
-        ${req.file.size},
-        ${null}
-      )
-    `;
+    const { categoryId } = req.body;
+
+await sql.query`
+INSERT INTO Assets
+(
+FileName,
+OriginalFileName,
+BlobURL,
+FileType,
+FileSize,
+CategoryID,
+UploadedBy
+)
+VALUES
+(
+${result.fileName},
+${req.file.originalname},
+${result.url},
+${req.file.mimetype},
+${req.file.size},
+${categoryId},
+${req.user.UserID}
+)
+`;
     try {
 
       if (req.file.mimetype.startsWith("image/")) {
@@ -99,9 +103,16 @@ const uploadAsset = async (req, res) => {
 const getAllAssets = async (req, res) => {
   try {
     const result = await sql.query`
-      SELECT *
-      FROM Assets
-      ORDER BY UploadedAt DESC
+      SELECT
+A.*,
+U.Name AS UploadedByName,
+C.CategoryName
+FROM Assets A
+LEFT JOIN Users U
+ON A.UploadedBy = U.UserID
+LEFT JOIN Categories C
+ON A.CategoryID = C.CategoryID
+ORDER BY A.UploadedAt DESC
     `;
 
     res.status(200).json({

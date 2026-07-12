@@ -22,7 +22,11 @@ async function loadAssets() {
 
   try {
 
-    const response = await fetch("http://localhost:5000/api/assets");
+    const response = await fetch("http://localhost:5000/api/assets", {
+    headers: {
+        Authorization: "Bearer " + localStorage.getItem("token")
+    }
+})
 
     const result = await response.json();
 
@@ -34,15 +38,15 @@ async function loadAssets() {
 
       name: asset.OriginalFileName,
 
-      category: "General",
+      category: asset.CategoryName || "Uncategorized",
 
-      type: asset.FileType,
+      type: asset.FileType.split("/")[0],
 
       ext: asset.FileType.split("/")[1],
 
       date: new Date(asset.UploadedAt).toLocaleDateString(),
 
-      by: "Admin",
+      by: asset.UploadedByName || "Unknown",
 
       visibility: "Private",
 
@@ -73,6 +77,7 @@ async function loadAssets() {
               : "#64748B"
 
     }));
+    populateCategoryFilter();
 
     renderGallery();
 
@@ -87,12 +92,29 @@ async function loadAssets() {
 }
 
 function populateCategoryFilter() {
-  const sel = document.getElementById('filterCategory');
-  DAM_DATA.categories.forEach(c => {
-    const opt = document.createElement('option');
-    opt.value = c.name; opt.textContent = c.name;
-    sel.appendChild(opt);
-  });
+
+    const sel = document.getElementById("filterCategory");
+
+    sel.innerHTML = `<option value="">All Categories</option>`;
+
+    const categories = [...new Set(
+        assets
+            .map(a => a.category)
+            .filter(Boolean)
+    )];
+
+    categories.forEach(category => {
+
+        const option = document.createElement("option");
+
+        option.value = category;
+
+        option.textContent = category;
+
+        sel.appendChild(option);
+
+    });
+
 }
 
 function bindGalleryEvents() {
@@ -267,6 +289,7 @@ onclick="downloadAsset(${a.id})">
 title="Delete"
 onclick="deleteAsset(${a.id})">
     <i class="bi bi-trash"></i>
+</button>
 
         </div>
       </td>
@@ -309,24 +332,24 @@ async function downloadAsset(id) {
   try {
 
     const response = await fetch(
-      `http://localhost:5000/api/assets/download/${id}`
+      `http://localhost:5000/api/assets/download/${id}`,
+      {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("token")
+        }
+      }
     );
 
     const result = await response.json();
 
     if (!result.success) {
-
       alert("Download failed");
-
       return;
-
     }
 
     window.open(result.data.downloadUrl, "_blank");
 
-  }
-
-  catch (error) {
+  } catch (error) {
 
     console.error(error);
 
@@ -343,7 +366,10 @@ async function deleteAsset(id) {
     const response = await fetch(
       `http://localhost:5000/api/assets/${id}`,
       {
-        method: "DELETE"
+        method: "DELETE",
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("token")
+        }
       }
     );
 
@@ -355,13 +381,10 @@ async function deleteAsset(id) {
 
     }
 
-  }
-
-  catch (error) {
+  } catch (error) {
 
     console.error(error);
 
   }
 
 }
-

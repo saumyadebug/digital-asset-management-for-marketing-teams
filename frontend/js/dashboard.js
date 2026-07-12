@@ -21,27 +21,117 @@ document.addEventListener('DOMContentLoaded', () => {
   loadDashboardStats();
 });
 
-function renderRecentUploads() {
-  const tbody = document.getElementById('recentUploadsBody');
+async function renderRecentUploads() {
+
+  const tbody = document.getElementById("recentUploadsBody");
+
   if (!tbody) return;
-  const rows = DAM_DATA.assets.slice(0, 6).map(a => `
-    <tr>
-      <td>
-        <div class="d-flex align-items-center gap-2">
-          <div class="file-icon-thumb" style="background:${a.color}22; color:${a.color};"><i class="bi ${a.icon}"></i></div>
-          <div>
-            <div class="fw-semibold" style="font-size:.85rem;">${a.name}</div>
-            <small class="text-muted-2">${a.ext} · ${a.size}</small>
-          </div>
-        </div>
-      </td>
-      <td><span class="chip chip-neutral">${a.category}</span></td>
-      <td>${a.by}</td>
-      <td class="text-muted-2">${a.date}</td>
-      <td><span class="chip ${a.visibility === 'Public' ? 'chip-success' : 'chip-warning'}">${a.visibility}</span></td>
-    </tr>
-  `).join('');
-  tbody.innerHTML = rows;
+
+  try {
+
+    const response = await fetch(
+    "http://localhost:5000/api/assets",
+    {
+        headers: {
+            Authorization:
+                "Bearer " + localStorage.getItem("token")
+        }
+    }
+);
+
+    const result = await response.json();
+
+    if (!result.success) return;
+
+    const assets = result.data.slice(0, 6);
+
+    tbody.innerHTML = assets.map(asset => {
+
+      let icon = "bi-file-earmark";
+      let color = "#64748B";
+
+      if (asset.FileType.startsWith("image/")) {
+        icon = "bi-image";
+        color = "#2563EB";
+      }
+      else if (asset.FileType.startsWith("video/")) {
+        icon = "bi-camera-reels";
+        color = "#8B5CF6";
+      }
+      else if (asset.FileType.startsWith("application/")) {
+        icon = "bi-file-earmark-pdf";
+        color = "#EF4444";
+      }
+
+      return `
+        <tr>
+
+          <td>
+            <div class="d-flex align-items-center gap-2">
+
+              <div
+                class="file-icon-thumb"
+                style="background:${color}22;color:${color};">
+
+                <i class="bi ${icon}"></i>
+
+              </div>
+
+              <div>
+
+                <div class="fw-semibold">
+                  ${asset.OriginalFileName}
+                </div>
+
+                <small class="text-muted-2">
+
+                  ${(asset.FileSize / (1024 * 1024)).toFixed(2)} MB
+
+                </small>
+
+              </div>
+
+            </div>
+          </td>
+
+          <td>
+
+            ${asset.CategoryName ?? "-"}
+
+          </td>
+
+          <td>
+
+            ${asset.UploadedByName || "Unknown"}
+
+          </td>
+
+          <td>
+
+            ${new Date(asset.UploadedAt).toLocaleDateString()}
+
+          </td>
+
+          <td>
+
+            <span class="chip chip-success">
+              Uploaded
+            </span>
+
+          </td>
+
+        </tr>
+      `;
+
+    }).join("");
+
+  }
+  catch (err) {
+
+    console.log(err);
+
+  }
+
 }
 
 function renderRecentActivity() {
@@ -77,7 +167,15 @@ async function loadDashboardStats() {
 
   try {
 
-    const response = await fetch("http://localhost:5000/api/assets/stats");
+    const response = await fetch(
+    "http://localhost:5000/api/assets/stats",
+    {
+        headers: {
+            Authorization:
+                "Bearer " + localStorage.getItem("token")
+        }
+    }
+);
 
     console.log("Response:", response);
 
