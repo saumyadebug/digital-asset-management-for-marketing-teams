@@ -37,8 +37,8 @@ function renderAsset(a){
     ${a.tags.map(t=>`<span class="badge rounded-pill text-bg-light border">#${t}</span>`).join('')}
   `;
 
-  document.getElementById('assetDescription').textContent =
-    `${a.name} is part of the "${a.category}" library, uploaded by ${a.by} for use across current marketing initiatives. This asset has been downloaded ${a.downloads} times and is marked ${a.visibility.toLowerCase()} for the workspace.`;
+  document.getElementById("assetDescription").textContent =
+`${a.name} belongs to the "${a.category}" category and was uploaded by ${a.by}. The asset is securely stored in Azure Blob Storage while its metadata is maintained in Azure SQL Database for efficient organization and retrieval.`;
 
   document.getElementById('assetInfoList').innerHTML = `
     <div class="d-flex justify-content-between py-2 border-bottom"><span class="text-muted-2">File type</span><span class="fw-semibold">${a.ext}</span></div>
@@ -49,27 +49,32 @@ function renderAsset(a){
     <div class="d-flex justify-content-between py-2"><span class="text-muted-2">Downloads</span><span class="fw-semibold">${a.downloads}</span></div>
   `;
 
-  document.getElementById('versionHistory').innerHTML = `
-    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-      <div><div class="fw-semibold small">v3 (current)</div><small class="text-muted-2">${a.date} · ${a.by}</small></div>
-      <span class="chip chip-success">Active</span>
+  document.getElementById("versionHistory").innerHTML = `
+<div class="d-flex justify-content-between align-items-center py-2">
+    <div>
+        <div class="fw-semibold small">Current Version</div>
+        <small class="text-muted-2">${a.date} · ${a.by}</small>
     </div>
-    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-      <div><div class="fw-semibold small">v2</div><small class="text-muted-2">2026-05-30 · ${a.by}</small></div>
-      <button class="btn btn-outline-secondary btn-sm">Restore</button>
-    </div>
-    <div class="d-flex justify-content-between align-items-center py-2">
-      <div><div class="fw-semibold small">v1</div><small class="text-muted-2">2026-05-12 · ${a.by}</small></div>
-      <button class="btn btn-outline-secondary btn-sm">Restore</button>
-    </div>
-  `;
+    <span class="chip chip-success">Latest</span>
+</div>
+`;
 
-  document.getElementById('assetTimeline').innerHTML = `
-    <div class="timeline-item"><div class="fw-semibold small">Uploaded by ${a.by}</div><small class="text-muted-2">${a.date}</small></div>
-    <div class="timeline-item"><div class="fw-semibold small">Reviewed by Marketing Lead</div><small class="text-muted-2">${a.date}</small></div>
-    <div class="timeline-item"><div class="fw-semibold small">Shared with Social Media team</div><small class="text-muted-2">2026-07-02</small></div>
-    <div class="timeline-item"><div class="fw-semibold small">Downloaded ${a.downloads} times</div><small class="text-muted-2">Ongoing</small></div>
-  `;
+document.getElementById("assetTimeline").innerHTML = `
+<div class="timeline-item">
+    <div class="fw-semibold small">Asset uploaded by ${a.by}</div>
+    <small class="text-muted-2">${a.date}</small>
+</div>
+
+<div class="timeline-item">
+    <div class="fw-semibold small">Stored securely in Azure Blob Storage</div>
+    <small class="text-muted-2">Completed</small>
+</div>
+
+<div class="timeline-item">
+    <div class="fw-semibold small">Metadata stored in Azure SQL Database</div>
+    <small class="text-muted-2">Completed</small>
+</div>
+`;
 
   const related = DAM_DATA.assets.filter(x => x.category===a.category && x.id!==a.id).slice(0,3);
   document.getElementById('relatedAssets').innerHTML = related.map(r => `
@@ -85,9 +90,19 @@ function renderAsset(a){
 
 function renderComments(){
   const comments = [
-    {user:"Karan Mehta", avatar:"https://i.pravatar.cc/150?img=12", text:"This looks great for the Q3 push — can we get a horizontal crop too?", time:"2 days ago"},
-    {user:"Sana Iqbal", avatar:"https://i.pravatar.cc/150?img=32", text:"Approved for the Instagram carousel. Nice work!", time:"1 day ago"}
-  ];
+{
+    user: "Marketing Team",
+    avatar: "https://ui-avatars.com/api/?name=Marketing+Team&background=2563EB&color=fff",
+    text: "Asset uploaded successfully and available for team access.",
+    time: "Recently"
+},
+{
+    user: "CloudVault System",
+    avatar: "https://ui-avatars.com/api/?name=CloudVault&background=0F766E&color=fff",
+    text: "Metadata stored in Azure SQL Database and file secured in Azure Blob Storage.",
+    time: "Recently"
+}
+];
   document.getElementById('commentsList').innerHTML = comments.map(c => `
     <div class="d-flex gap-2 mb-3">
       <img src="${c.avatar}" class="avatar-sm" alt="${c.user}">
@@ -107,7 +122,7 @@ function postComment(){
     <div class="d-flex gap-2 mb-3 fade-in-up">
       <img src="https://i.pravatar.cc/150?img=47" class="avatar-sm" alt="You">
       <div>
-        <div class="fw-semibold small">Aditi Rao <span class="text-muted-2 fw-normal">· just now</span></div>
+       <div class="fw-semibold small">Current User <span class="text-muted-2 fw-normal">· just now</span></div>
         <div class="small">${input.value.trim()}</div>
       </div>
     </div>

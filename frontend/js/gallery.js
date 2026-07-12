@@ -154,7 +154,21 @@ function getFilteredAssets() {
   const sort = document.getElementById('sortBy').value;
 
   let list = assets.filter(a => {
-    if (q && !(a.name.toLowerCase().includes(q) || a.tags.join(' ').toLowerCase().includes(q))) return false;
+    if (q) {
+
+    const searchText = [
+        a.name,
+        a.category,
+        a.by,
+        a.type,
+        a.ext,
+        ...(a.tags || [])
+    ]
+    .join(" ")
+    .toLowerCase();
+
+    if (!searchText.includes(q)) return false;
+}
     if (cat && a.category !== cat) return false;
     if (type && a.type !== type) return false;
     if (dateRange) {
