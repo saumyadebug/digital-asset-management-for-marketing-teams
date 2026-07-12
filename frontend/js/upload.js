@@ -119,19 +119,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     formData.append("file", queuedFiles[0]);
 
-    formData.append("assetName", name);
+formData.append("assetName", name);
 
-    formData.append("categoryId", category);
+formData.append("categoryId", category);
+
+formData.append(
+    "description",
+    document.getElementById("assetDescription").value
+);
+
+formData.append(
+    "tags",
+    document.getElementById("assetTags").value
+);
+
+formData.append(
+    "visibility",
+    document.getElementById("assetVisibility").value
+);
+
+formData.append(
+    "department",
+    document.getElementById("assetDepartment").value
+);
+    const token = localStorage.getItem("token");
 
     try {
 
       const response = await fetch(
-        "http://localhost:5000/api/assets/upload",
-        {
-          method: "POST",
-          body: formData
-        }
-      );
+    "http://localhost:5000/api/assets/upload",
+    {
+        method: "POST",
+
+        headers: {
+            Authorization: `Bearer ${token}`
+        },
+
+        body: formData
+    }
+);
 
       const result = await response.json();
 

@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const spinner = document.getElementById('loginSpinner');
     const submitBtn = document.getElementById('loginSubmitBtn');
 
-    loginForm.addEventListener('submit', (e) => {
+    loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       errorAlert.classList.add('d-none');
       successAlert.classList.add('d-none');
@@ -50,24 +50,74 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // simulate authentication
-      btnText.textContent = 'Signing in...';
-      spinner.classList.remove('d-none');
-      submitBtn.disabled = true;
+      btnText.textContent = "Signing in...";
+spinner.classList.remove("d-none");
+submitBtn.disabled = true;
 
-      setTimeout(() => {
-        // Find user by email or create a dummy one for the demo
-        const user = DAM_DATA.users.find(u => u.email === emailInput.value.trim()) || {
-          name: emailInput.value.split('@')[0],
-          email: emailInput.value.trim(),
-          role: 'Admin',
-          department: 'Marketing',
-          avatar: 'https://i.pravatar.cc/150'
-        };
-        localStorage.setItem('dam_user', JSON.stringify(user));
-        
-        successAlert.classList.remove('d-none');
-        setTimeout(() => { window.location.href = 'dashboard.html'; }, 900);
-      }, 1100);
+try {
+
+    const response = await fetch(
+        "http://localhost:5000/api/auth/login",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                email: emailInput.value.trim(),
+                password: passInput.value
+            })
+        }
+    );
+
+    const result = await response.json();
+
+    if (!result.success) {
+
+        errorAlert.classList.remove("d-none");
+        errorAlert.querySelector("span").textContent = result.message;
+
+        submitBtn.disabled = false;
+        spinner.classList.add("d-none");
+        btnText.textContent = "Sign In";
+
+        return;
+    }
+
+    localStorage.setItem("token", result.token);
+
+    localStorage.setItem(
+        "dam_user",
+        JSON.stringify(result.user)
+    );
+
+    localStorage.setItem(
+        "userId",
+        result.user.id
+    );
+
+    successAlert.classList.remove("d-none");
+
+    setTimeout(() => {
+
+        window.location.href = "dashboard.html";
+
+    }, 800);
+
+}
+catch (err) {
+
+    console.log(err);
+
+    damToast("Login failed", "danger");
+
+    submitBtn.disabled = false;
+
+    spinner.classList.add("d-none");
+
+    btnText.textContent = "Sign In";
+
+}
     });
 
     document.getElementById('forgotPasswordLink')?.addEventListener('click', (e) => {
@@ -88,6 +138,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
+    const defaultRole = document.querySelector(".role-option.selected");
+
+if (defaultRole) {
+    document.getElementById("selectedRole").value =
+        defaultRole.dataset.role;
+}
+
     // avatar preview
     const avatarInput = document.getElementById('avatarInput');
     const avatarPreview = document.getElementById('avatarPreview');
@@ -101,21 +158,66 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // password strength
-    const pw = document.getElementById('regPassword');
-    const bar = document.getElementById('pwStrengthBar');
-    pw?.addEventListener('input', () => {
-      const v = pw.value;
-      let score = 0;
-      if(v.length >= 6) score++;
-      if(v.length >= 10) score++;
-      if(/[A-Z]/.test(v) && /[0-9]/.test(v)) score++;
-      if(/[^A-Za-z0-9]/.test(v)) score++;
-      const pct = (score/4)*100;
-      bar.style.width = pct + '%';
-      bar.style.background = pct < 40 ? 'var(--danger)' : pct < 75 ? 'var(--warning)' : 'var(--success)';
-    });
+    const pw = document.getElementById("regPassword");
+const bar = document.getElementById("pwStrengthBar");
 
-    registerForm.addEventListener('submit', (e) => {
+pw?.addEventListener("input", () => {
+
+    const v = pw.value;
+
+    let score = 0;
+
+    let message = "";
+
+    if (v.length >= 8) score++;
+
+    if (/[A-Z]/.test(v)) score++;
+
+    if (/[0-9]/.test(v)) score++;
+
+    if (/[^A-Za-z0-9]/.test(v)) score++;
+
+    const pct = (score / 4) * 100;
+
+    bar.style.width = pct + "%";
+
+    if (score <= 1) {
+
+        bar.style.background = "#EF4444";
+
+        message = "Weak password";
+
+    }
+
+    else if (score == 2) {
+
+        bar.style.background = "#F59E0B";
+
+        message = "Medium password";
+
+    }
+
+    else if (score == 3) {
+
+        bar.style.background = "#3B82F6";
+
+        message = "Strong password";
+
+    }
+
+    else {
+
+        bar.style.background = "#22C55E";
+
+        message = "Very strong password";
+
+    }
+
+    document.getElementById("passwordStrengthText").textContent = message;
+
+});
+
+    registerForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = document.getElementById('regName').value.trim();
       const email = document.getElementById('regEmail').value.trim();
@@ -125,7 +227,21 @@ document.addEventListener('DOMContentLoaded', () => {
       let valid = true;
       if(!name){ valid = false; }
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ valid = false; }
-      if(pw.value.length < 6){ valid = false; }
+      if (
+    pw.value.length < 8 ||
+    !/[A-Z]/.test(pw.value) ||
+    !/[0-9]/.test(pw.value) ||
+    !/[^A-Za-z0-9]/.test(pw.value)
+) {
+
+    damToast(
+        "Password must contain at least 8 characters, one uppercase letter, one number and one special character.",
+        "warning",
+        "Weak Password"
+    );
+
+    valid = false;
+}
       if(pw.value !== confirm){
         document.getElementById('confirmFeedback').classList.remove('d-none');
         valid = false;
@@ -136,6 +252,15 @@ document.addEventListener('DOMContentLoaded', () => {
         damToast('Please select a role to continue.', 'warning');
         valid = false;
       }
+      
+      console.log({
+    name,
+    email,
+    password: pw.value,
+    confirm,
+    role,
+    valid
+});
 
       if(!valid){
         damToast('Please review the highlighted fields.', 'danger', 'Something needs attention');
@@ -147,10 +272,75 @@ document.addEventListener('DOMContentLoaded', () => {
       btnText.textContent = 'Creating account...';
       spinner.classList.remove('d-none');
 
-      setTimeout(() => {
-        damToast('Account created! Redirecting to sign in...', 'success');
-        setTimeout(() => window.location.href = 'login.html', 1000);
-      }, 1100);
+try {
+
+    const response = await fetch(
+        "http://localhost:5000/api/auth/register",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+
+                name,
+
+                email,
+
+                password: pw.value,
+
+                role
+
+            })
+        }
+    );
+
+    const result = await response.json();
+
+    if (!result.success) {
+
+        damToast(result.message, "danger");
+
+        spinner.classList.add("d-none");
+
+        btnText.textContent = "Create Account";
+
+        return;
+
+    }
+
+    damToast(
+        "Account Created Successfully",
+        "success"
+    );
+
+    localStorage.setItem(
+        "token",
+        result.token
+    );
+
+    localStorage.setItem(
+        "dam_user",
+        JSON.stringify(result.user)
+    );
+
+    setTimeout(() => {
+
+        window.location.href = "dashboard.html";
+
+    }, 800);
+
+}
+catch (error) {
+
+    console.log(error);
+
+    damToast(
+        "Registration Failed",
+        "danger"
+    );
+
+}
     });
   }
 });
