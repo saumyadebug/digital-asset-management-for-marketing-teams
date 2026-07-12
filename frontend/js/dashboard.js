@@ -134,19 +134,77 @@ async function renderRecentUploads() {
 
 }
 
-function renderRecentActivity() {
-  const list = document.getElementById('recentActivityList');
-  if (!list) return;
-  const colorMap = { blue: 'bg-tint-blue', green: 'bg-tint-green', purple: 'bg-tint-purple', amber: 'bg-tint-amber', cyan: 'bg-tint-cyan', red: 'bg-tint-red' };
-  list.innerHTML = DAM_DATA.activity.slice(0, 5).map(item => `
-    <div class="d-flex align-items-start gap-3 mb-3">
-      <div class="stat-icon ${colorMap[item.color]} mb-0" style="width:36px;height:36px;font-size:.95rem;"><i class="bi ${item.icon}"></i></div>
-      <div>
-        <div style="font-size:.83rem;"><strong>${item.user}</strong> ${item.action} <span class="fw-semibold">${item.target}</span></div>
-        <small class="text-muted-2">${item.time}</small>
-      </div>
-    </div>
-  `).join('');
+async function renderRecentActivity() {
+
+    const list = document.getElementById("recentActivityList");
+
+    if (!list) return;
+
+    try {
+
+        const response = await fetch(
+            "http://localhost:5000/api/assets",
+            {
+                headers: {
+                    Authorization:
+                        "Bearer " + localStorage.getItem("token")
+                }
+            }
+        );
+
+        const result = await response.json();
+
+        if (!result.success) return;
+
+        const assets = result.data.slice(0, 5);
+
+        list.innerHTML = assets.map(asset => `
+
+            <div class="d-flex align-items-start gap-3 mb-3">
+
+                <div class="stat-icon bg-tint-blue mb-0"
+                     style="width:36px;height:36px;">
+
+                    <i class="bi bi-upload"></i>
+
+                </div>
+
+                <div>
+
+                    <div style="font-size:.83rem;">
+
+                        <strong>${asset.UploadedByName || "Unknown"}</strong>
+
+                        uploaded
+
+                        <span class="fw-semibold">
+
+                            ${asset.OriginalFileName}
+
+                        </span>
+
+                    </div>
+
+                    <small class="text-muted-2">
+
+                        ${new Date(asset.UploadedAt).toLocaleString()}
+
+                    </small>
+
+                </div>
+
+            </div>
+
+        `).join("");
+
+    }
+
+    catch(err){
+
+        console.log(err);
+
+    }
+
 }
 
 function drawDashboardCharts() {

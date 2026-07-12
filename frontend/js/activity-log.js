@@ -12,44 +12,149 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('activityActionFilter').addEventListener('change', renderActivityTimeline);
 });
 
-function populateUserFilter(){
-  const sel = document.getElementById('activityUserFilter');
-  const uniqueUsers = [...new Set(DAM_DATA.activity.map(a => a.user))];
-  uniqueUsers.forEach(u => {
-    const opt = document.createElement('option');
-    opt.value = u; opt.textContent = u;
-    sel.appendChild(opt);
-  });
+async function populateUserFilter() {
+
+    const sel = document.getElementById("activityUserFilter");
+
+    sel.innerHTML = '<option value="">All Users</option>';
+
+    try {
+
+        const response = await fetch(
+            "http://localhost:5000/api/assets",
+            {
+                headers: {
+                    Authorization: "Bearer " + localStorage.getItem("token")
+                }
+            }
+        );
+
+        const result = await response.json();
+
+        if (!result.success) return;
+
+        const users = [...new Set(result.data.map(a => a.UploadedByName))];
+
+        users.forEach(user => {
+
+            const option = document.createElement("option");
+
+            option.value = user;
+            option.textContent = user;
+
+            sel.appendChild(option);
+
+        });
+
+    }
+    catch(err){
+
+        console.log(err);
+
+    }
+
 }
 
-const activityColorMap = {blue:'bg-tint-blue', green:'bg-tint-green', purple:'bg-tint-purple', amber:'bg-tint-amber', cyan:'bg-tint-cyan', red:'bg-tint-red'};
 
-function renderActivityTimeline(){
-  const q = document.getElementById('activitySearch').value.toLowerCase().trim();
-  const user = document.getElementById('activityUserFilter').value;
-  const action = document.getElementById('activityActionFilter').value;
+async function renderActivityTimeline() {
 
-  // Duplicate the base dataset a couple of times with slight variation to feel like a fuller log
-  const extended = [...DAM_DATA.activity];
+    const timeline = document.getElementById("activityTimeline");
 
-  const filtered = extended.filter(item => {
-    if(q && !(item.user.toLowerCase().includes(q) || item.target.toLowerCase().includes(q))) return false;
-    if(user && item.user !== user) return false;
-    if(action && !item.action.includes(action)) return false;
-    return true;
-  });
+    const q = document.getElementById("activitySearch").value.toLowerCase();
 
-  document.getElementById('activityEmptyState').classList.toggle('d-none', filtered.length !== 0);
+    const selectedUser =
+        document.getElementById("activityUserFilter").value;
 
-  document.getElementById('activityTimeline').innerHTML = filtered.map(item => `
-    <div class="timeline-item">
-      <div class="d-flex align-items-start gap-3">
-        <div class="stat-icon ${activityColorMap[item.color]} mb-0" style="width:38px;height:38px;font-size:1rem;"><i class="bi ${item.icon}"></i></div>
-        <div>
-          <div style="font-size:.9rem;"><strong>${item.user}</strong> ${item.action} <span class="fw-semibold">${item.target}</span></div>
-          <small class="text-muted-2"><i class="bi bi-clock me-1"></i>${item.time}</small>
-        </div>
-      </div>
-    </div>
-  `).join('');
+    try {
+
+        const response = await fetch(
+            "http://localhost:5000/api/assets",
+            {
+                headers:{
+                    Authorization:
+                        "Bearer " + localStorage.getItem("token")
+                }
+            }
+        );
+
+        const result = await response.json();
+
+        if(!result.success) return;
+
+        let assets = result.data;
+
+        if(selectedUser){
+
+            assets = assets.filter(a =>
+                a.UploadedByName === selectedUser
+            );
+
+        }
+
+        if(q){
+
+            assets = assets.filter(a =>
+                a.OriginalFileName.toLowerCase().includes(q)
+            );
+
+        }
+
+        timeline.innerHTML = assets.map(asset => `
+
+            <div class="timeline-item">
+
+                <div class="d-flex align-items-start gap-3">
+
+                    <div class="stat-icon bg-tint-blue">
+
+                        <i class="bi bi-upload"></i>
+
+                    </div>
+
+                    <div>
+
+                        <div>
+
+                            <strong>${asset.UploadedByName}</strong>
+
+                            uploaded
+
+                            <span class="fw-semibold">
+
+                                ${asset.OriginalFileName}
+
+                            </span>
+
+                        </div>
+
+                        <small class="text-muted-2">
+
+                            ${new Date(asset.UploadedAt)
+                                .toLocaleString()}
+
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        `).join("");
+        const emptyState = document.getElementById("activityEmptyState");
+
+if (emptyState) {
+    emptyState.classList.toggle("d-none", assets.length !== 0);
 }
+
+    }
+
+    catch(err){
+
+        console.log(err);
+
+    }
+
+}
+
+  
