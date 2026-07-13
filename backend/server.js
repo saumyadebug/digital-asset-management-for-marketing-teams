@@ -8,6 +8,7 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 
 // Azure SQL
 const { sql, dbConfig } = require("./config/db");
@@ -48,6 +49,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, "public")));
+
 // ===============================
 // API Routes
 // ===============================
@@ -62,10 +66,7 @@ app.use("/api/users", userRoutes);
 // ===============================
 
 app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "CloudVault DAM API is running 🚀",
-  });
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // ===============================
